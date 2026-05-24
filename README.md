@@ -1,5 +1,7 @@
 # DanmakuEditor — B站 XML 弹幕编辑器
 
+> 🛠️ 个人自用工具，由 AI（DeepSeek）辅助开发。如果你也用得上，欢迎 fork 或提 PR。
+
 一个离线、轻量的 B站 XML 弹幕编辑工具。支持时间偏移、精确/正则/颜色/时间范围删除、保留模式（反向删除），GUI 和 CLI 双模式。
 
 ## 功能
@@ -112,3 +114,8 @@ pyinstaller --onefile --noconsole --name DanmakuEditor danmaku_editor.py
 ## License
 
 MIT
+
+
+---
+
+> 本项目为个人自用工具，在 DeepSeek 的辅助下完成开发。主要功能模块（解析引擎、CLI 、GUI）均由 AI 生成并经多轮迭代优化。如果你对这个项目有建议或想帮助改进，欢迎建议。
