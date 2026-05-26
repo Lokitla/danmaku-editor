@@ -1,8 +1,15 @@
-# DanmakuEditor — B站 XML 弹幕编辑器
+# DanmakuEditor v2.0 — B站 XML 弹幕编辑器
 
-> 🛠️ 个人自用工具，由 AI（DeepSeek）辅助开发。
+> 由 AI（Claude）辅助开发重构。
 
 一个离线、轻量的 B站 XML 弹幕编辑工具。支持时间偏移、精确/正则/颜色/时间范围删除、保留模式（反向删除），GUI 和 CLI 双模式。
+
+## v2.0 更新
+
+- **UI 全面重写**：迁移至 CustomTkinter，内置暗色主题，圆角组件
+- **字体优化**：自动检测系统最佳中文字体（Microsoft YaHei UI）
+- **Bug 修复**：修复 CLI 入口逻辑、移除脆弱的 canvas item 操作
+- **代码精简**：删除约 450 行冗余代码（手动 DPI、canvas 圆角、自定义输入框）
 
 ## 功能
 
@@ -17,13 +24,13 @@
 | 空白弹幕删除 | ✓ | ✓ |
 | 保留模式（反向删除，只保留匹配项） | ✓ | ✓ |
 | 预设保存/加载 | - | ✓ |
-| 拖拽文件打开 | - | ✓ |
 
 ## 快速开始
 
 ### 直接运行（需 Python 3.8+）
 
 ```bash
+pip install customtkinter
 python danmaku_editor.py                           # 启动 GUI
 python danmaku_editor.py input.xml                 # GUI 并加载文件
 python danmaku_editor.py input.xml --list          # CLI 统计
@@ -77,12 +84,11 @@ positional arguments:
 
 ## GUI 界面
 
-暗色主题，三栏布局。左侧文件与预设管理，中间操作设置，底部日志与执行按钮。
+CustomTkinter 暗色主题，左侧文件与预设管理，中间操作设置，底部日志与执行按钮。
 
-- **删除模式 / 保留模式**：Tab 顶部有醒目切换条，红色为删除模式，紫色为保留模式
+- **删除模式 / 保留模式**：Tab 顶部有切换开关
 - **预设**：可保存当前所有设置，一键加载
-- **拖拽**：直接将 XML 文件拖到窗口即可打开
-- **DPI 感知**：自动适配高分屏，消除模糊
+- **字体**：自动检测系统最佳中文字体
 
 ## 文件格式
 
@@ -101,21 +107,14 @@ positional arguments:
 ```
 danmaku_editor.py    # 主程序（CLI + GUI）
 presets/             # 预设文件（自动创建）
-dist/                # 打包输出
 ```
 
-## 打包
+## 技术栈
 
-```bash
-pip install pyinstaller==6.19.0
-pyinstaller --onefile --noconsole --name DanmakuEditor danmaku_editor.py
-```
+- Python 3.8+
+- CustomTkinter 5.2+（现代 UI 组件）
+- 标准库
 
 ## License
 
 MIT
-
-
----
-
-> 本项目为个人自用工具，在 DeepSeek 的辅助下完成开发。主要功能模块（解析引擎、CLI 、GUI）均由 AI 生成并经多轮迭代优化。如果你对这个项目有建议或想帮助改进。
