@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-B站 XML 弹幕编辑器 v2.0
+B站 XML 弹幕编辑器 v3.0
 功能: 时间偏移 + 删除/保留（精确/正则/时间范围/颜色/空白）
 模式: CLI（带参数运行） / GUI（无参数运行）
+UI: CustomTkinter 暗色主题
 """
 
 import re
@@ -11,11 +12,13 @@ import os
 import sys
 import json
 import argparse
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
-import ctypes
+from collections import Counter
 from dataclasses import dataclass
 from typing import Optional
+
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
+import tkinter.font as tkfont
 
 
 # ── 环境适配: Windows CMD stdout 编码 ──
@@ -31,24 +34,49 @@ def _fix_stdout():
 
 _fix_stdout()
 
-# ── Windows DPI 感知：消除高分屏模糊 ──
+# ── CustomTkinter 全局设置 ──
+ctk.set_appearance_mode('dark')
+ctk.set_default_color_theme('blue')
 
-def _enable_dpi_aware():
-    """启用 Windows DPI 感知，防止界面被拉伸模糊"""
-    if sys.platform != 'win32':
-        return
+# ── 字体检测 ──
+_FONT_CANDIDATES = [
+    'Microsoft YaHei UI', 'Microsoft YaHei', '微软雅黑',
+    'PingFang SC', 'Noto Sans CJK SC', 'Segoe UI', 'Tahoma',
+]
+
+
+def _detect_font():
     try:
-        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+        _r = ctk.CTk()
+        _r.withdraw()
+        for name in _FONT_CANDIDATES:
+            try:
+                f = tkfont.Font(family=name, size=12)
+                if f.actual()['family'] == name:
+                    _r.destroy()
+                    return name
+            except Exception:
+                continue
+        _r.destroy()
     except Exception:
-        try:
-            ctypes.windll.user32.SetProcessDPIAware()
-        except Exception:
-            pass
+        pass
+    return 'Microsoft YaHei UI'
 
-_enable_dpi_aware()
+
+FONT = _detect_font()
+try:
+    print(f'[弹幕编辑器] 字体: {FONT}')
+except Exception:
+    pass
+
+
+def ft(size=12, weight='normal'):
+    """生成字体元组"""
+    return (FONT, size, weight) if weight != 'normal' else (FONT, size)
+
 
 # ═════════════════════════════════════════════════════════════
-# 第一部分: 核心引擎
+# 核心引擎
 # ═════════════════════════════════════════════════════════════
 
 @dataclass
@@ -72,7 +100,6 @@ class Danmaku:
 
 
 def parse_xml(filepath: str) -> tuple:
-    """解析 B站 XML 弹幕文件 -> (header_str, list[Danmaku])"""
     with open(filepath, 'r', encoding='utf-8') as f:
         raw = f.read()
 
@@ -89,7 +116,6 @@ def parse_xml(filepath: str) -> tuple:
         mode     = int(attrs[1]) if len(attrs) > 1 else 1
         fsize    = int(attrs[2]) if len(attrs) > 2 else 25
         color    = int(attrs[3]) if len(attrs) > 3 else 16777215
-        # B站 p 属性: 时间,模式,字号,颜色,时间戳,弹幕池,用户Hash,弹幕ID
         ts       = int(attrs[4]) if len(attrs) > 4 else 0
         pool     = int(attrs[5]) if len(attrs) > 5 else 0
         uh       = attrs[6] if len(attrs) > 6 else ''
@@ -101,7 +127,6 @@ def parse_xml(filepath: str) -> tuple:
             p_raw=match.group(1), text=match.group(2), raw=match.group(0),
         ))
 
-    # 提取 header
     header_start = raw.index('<i>')
     prefix = raw[:header_start]
     body_start = xml_block.index('>') + 1
@@ -140,7 +165,6 @@ def shift_time(danmaku: list[Danmaku], offset: float,
 # ── 删除/保留 ──
 
 def delete_exact(danmaku: list[Danmaku], texts: set, invert: bool = False) -> int:
-    """invert=False -> 删除匹配的；invert=True -> 保留匹配的（删除其他）"""
     before = len(danmaku)
     if invert:
         danmaku[:] = [d for d in danmaku if d.text in texts]
@@ -151,7 +175,6 @@ def delete_exact(danmaku: list[Danmaku], texts: set, invert: bool = False) -> in
 
 def delete_regex(danmaku: list[Danmaku], patterns: list,
                  invert: bool = False) -> list:
-    """返回 [(pattern, 删除条数), ...]"""
     results = []
     for pat_str in patterns:
         pat = re.compile(pat_str)
@@ -183,7 +206,6 @@ def delete_empty(danmaku: list[Danmaku]) -> int:
 
 def delete_by_color(danmaku: list[Danmaku],
                     colors: list, invert: bool = False) -> int:
-    """colors 支持 #FFFFFF 或十进制整数"""
     color_set = set()
     for c in colors:
         if isinstance(c, str) and c.startswith('#'):
@@ -202,7 +224,6 @@ def get_stats(danmaku: list[Danmaku]) -> dict:
     if not danmaku:
         return {'count': 0, 'time_min': 0, 'time_max': 0,
                 'unique_texts': 0, 'modes': {}}
-    from collections import Counter
     times = [d.time for d in danmaku]
     return {
         'count': len(danmaku),
@@ -214,11 +235,10 @@ def get_stats(danmaku: list[Danmaku]) -> dict:
 
 
 # ═════════════════════════════════════════════════════════════
-# 第二部分: 预设管理
+# 预设管理
 # ═════════════════════════════════════════════════════════════
 
 def _preset_dir() -> str:
-    # 打包后使用 exe 所在目录，开发时使用脚本所在目录
     if getattr(sys, 'frozen', False):
         base = os.path.dirname(sys.executable)
     else:
@@ -250,7 +270,7 @@ def delete_preset(name: str):
 
 
 # ═════════════════════════════════════════════════════════════
-# 第三部分: CLI
+# CLI
 # ═════════════════════════════════════════════════════════════
 
 def run_cli(args):
@@ -266,7 +286,6 @@ def run_cli(args):
             print(f'弹幕模式分布: {s["modes"]}')
         return
 
-    # 检查是否有任何操作
     ops = [args.shift, args.delete, args.regex, args.delete_range,
            args.delete_empty, args.delete_color,
            args.keep, args.keep_regex, args.keep_range, args.keep_color]
@@ -276,7 +295,6 @@ def run_cli(args):
 
     total_deleted = 0
 
-    # 保留模式（反向删除）
     if args.keep:
         n = delete_exact(danmaku, set(args.keep), invert=True)
         total_deleted += n
@@ -298,7 +316,6 @@ def run_cli(args):
         total_deleted += n
         print(f'[保留] 颜色: 删除其他 {n} 条')
 
-    # 常规删除
     if args.delete_empty:
         n = delete_empty(danmaku)
         total_deleted += n
@@ -325,7 +342,6 @@ def run_cli(args):
             total_deleted += n
             print(f'[删除] 正则 "/{pat}/": {n} 条')
 
-    # 偏移
     if args.shift is not None:
         tr = tuple(args.shift_range) if args.shift_range else None
         n = shift_time(danmaku, args.shift, time_range=tr)
@@ -342,7 +358,7 @@ def run_cli(args):
 
 def cli_main():
     parser = argparse.ArgumentParser(
-        description='B站 XML 弹幕编辑器 v2',
+        description='B站 XML 弹幕编辑器 v3',
         epilog='''使用示例:
   %(prog)s input.xml --list
   %(prog)s input.xml -o out.xml -s 2.5 -d "文本" "文本2"
@@ -398,485 +414,361 @@ def cli_main():
         sys.exit(1)
 
 
-
 # ═════════════════════════════════════════════════════════════
-# 第四部分: GUI
+# GUI — CustomTkinter
 # ═════════════════════════════════════════════════════════════
 
-_C = {
-    'bg':          '#0d0d1a',
-    'fg':          '#e8e8e8',
-    'surface':     '#16162b',
-    'surface2':    '#1e1e38',
-    'accent':      '#7c4dff',
-    'accent_dim':  '#5e35b1',
-    'primary':     '#2962ff',
-    'success':     '#00c853',
-    'warn':        '#ffab00',
-    'error':       '#ff1744',
-    'entry_bg':    '#22223a',
-    'entry_fg':    '#e8e8e8',
-    'text_muted':  '#7a7a9a',
-    'border':      '#2a2a45',
-    'hover':       '#7c4dff',
-}
-
-import tkinter.font as _tkfont
-
-_CANDIDATE_FONTS = [
-    ('Microsoft YaHei UI', 12),
-    ('Microsoft YaHei', 12),
-    ('微软雅黑', 12),
-    ('Microsoft JhengHei UI', 12),
-    ('Microsoft JhengHei', 12),
-    ('PingFang SC', 12),
-    ('Noto Sans CJK SC', 12),
-    ('Tahoma', 12),
-    ('Segoe UI', 12),
-    ('SimHei', 12),
-]
-
-def _detect_best_font():
-    _r = None
-    try:
-        _r = tk.Tk()
-        _r.withdraw()
-        for name, sz in _CANDIDATE_FONTS:
-            f = _tkfont.Font(family=name, size=sz)
-            if f.actual()['family'] == name:
-                _r.destroy()
-                return name, sz
-    except Exception:
-        pass
-    if _r:
-        try: _r.destroy()
-        except: pass
-    return 'Microsoft YaHei', 12
-
-FONT_FAMILY, FONT_SIZE = _detect_best_font()
-_C['font'] = FONT_FAMILY
-_C['font_size'] = FONT_SIZE
-try:
-    print(f'检测到字体: {FONT_FAMILY} {FONT_SIZE}pt')
-except Exception:
-    pass
+# 颜色常量
+C_ACCENT    = '#7c4dff'
+C_ACCENT2   = '#5e35b1'
+C_SUCCESS   = '#00c853'
+C_WARN      = '#ffab00'
+C_ERROR     = '#ff1744'
+C_PRIMARY   = '#2962ff'
 
 
-def _rounded_rect(c, x1, y1, x2, y2, r=8, **kw):
-    kw.setdefault('fill', _C['surface'])
-    kw.setdefault('outline', _C['border'])
-    kw.setdefault('width', 1)
-    c.create_arc(x1, y1, x1+2*r, y1+2*r, start=90, extent=90, **kw)
-    c.create_arc(x2-2*r, y1, x2, y1+2*r, start=0, extent=90, **kw)
-    c.create_arc(x1, y2-2*r, x1+2*r, y2, start=180, extent=90, **kw)
-    c.create_arc(x2-2*r, y2-2*r, x2, y2, start=270, extent=90, **kw)
-    c.create_rectangle(x1+r, y1, x2-r, y1+r, **kw)
-    c.create_rectangle(x1+r, y2-r, x2-r, y2, **kw)
-    c.create_rectangle(x1, y1+r, x2, y2-r, **kw)
+class TagList(ctk.CTkFrame):
+    """可增删的标签列表（替代原 V2TagList + tk.Listbox）"""
 
-
-def _btn_canvas(master, text, command, width=48, height=24, bg=None, fg=None, r=5):
-    bg = bg or _C['accent']
-    fg = fg or 'white'
-    c = tk.Canvas(master, bg=_C['bg'], highlightthickness=0, width=width, height=height)
-    _rounded_rect(c, 0, 0, width-1, height-1, r=r, fill=bg, outline=bg)
-    c.create_text(width//2, height//2, text=text, fill=fg, font=(_C['font'], 12))
-    c.bind('<Button-1>', lambda e: command())
-    return c
-
-
-class ModeToggle(tk.Frame):
-    MODE_DELETE = 0
-    MODE_KEEP = 1
-
-    def __init__(self, master, variable, label_del='删除模式', label_keep='保留模式', command=None):
-        super().__init__(master, bg=_C['surface'])
-        self.var = variable
-        self._cmd = command
-        self.label_del = label_del
-        self.label_keep = label_keep
-
-        self.inner = tk.Frame(self, bg=_C['surface'])
-        self.inner.pack(fill=tk.X, padx=4, pady=4)
-
-        self.indicator = tk.Canvas(self.inner, bg=_C['surface'],
-                                    highlightthickness=0, width=22, height=22)
-        self.indicator.pack(side=tk.LEFT)
-
-        self.mode_label = tk.Label(self.inner, font=(_C['font'], 12, 'bold'),
-                                    anchor=tk.W, padx=6)
-        self.mode_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
-
-        self.inner.bind('<Button-1>', self._toggle)
-        self.indicator.bind('<Button-1>', self._toggle)
-        self.mode_label.bind('<Button-1>', self._toggle)
-        self._refresh()
-
-    def _toggle(self, event=None):
-        self.var.set(not self.var.get())
-        self._refresh()
-        if self._cmd:
-            self._cmd()
-
-    def _refresh(self):
-        self.indicator.delete('all')
-        is_keep = self.var.get()
-        if is_keep:
-            _rounded_rect(self.indicator, 2, 2, 20, 20, r=4,
-                           fill=_C['accent'], outline=_C['accent'])
-            self.indicator.create_line(6, 11, 10, 15, 16, 7, fill='white', width=2)
-            self.mode_label.config(text=f'\u25b6 {self.label_keep}', fg=_C['accent'])
-            self.inner.config(bg='#1a1030')
-            self.mode_label.config(bg='#1a1030')
-            self.config(bg='#1a1030')
-        else:
-            _rounded_rect(self.indicator, 2, 2, 20, 20, r=4,
-                           fill=_C['error'], outline=_C['error'])
-            self.indicator.create_line(7, 7, 15, 15, fill='white', width=2)
-            self.indicator.create_line(15, 7, 7, 15, fill='white', width=2)
-            self.mode_label.config(text=f'\u25b6 {self.label_del}', fg=_C['error'])
-            self.inner.config(bg=_C['surface'])
-            self.mode_label.config(bg=_C['surface'])
-            self.config(bg=_C['surface'])
-
-
-class TitledCard(tk.Frame):
-    def __init__(self, master, title, width=260, **kw):
-        kw.setdefault('bg', _C['bg'])
-        kw.setdefault('highlightthickness', 0)
-        super().__init__(master, **kw)
-        self.inner_bg = _C['surface']
-        self.card_w = width
-        self.title = title
-
-        self.canvas = tk.Canvas(self, bg=_C['bg'], highlightthickness=0)
-        self.canvas.pack(fill=tk.BOTH, expand=True)
-        self.canvas.bind('<Configure>', self._redraw)
-
-        self.body = tk.Frame(self.canvas, bg=self.inner_bg, highlightthickness=0)
-        self.canvas.create_window(2, 14, anchor='nw', window=self.body)
-
-    def _redraw(self, event=None):
-        w = self.winfo_width() or self.card_w
-        h = self.winfo_height() or 80
-        self.canvas.delete('bg')
-        _rounded_rect(self.canvas, 0, 12, w-1, h-1, r=10,
-                       fill=self.inner_bg, outline=_C['border'], tags='bg')
-        self.canvas.create_line(16, 12, w-16, 12, fill=_C['accent'],
-                                 width=3, capstyle='round', tags='bg')
-        self.canvas.create_text(20, 12, text=self.title, fill=_C['accent'],
-                                 font=(_C['font'], 12, 'bold'), anchor='nw', tags='bg')
-        cw = max(10, w - 20)
-        self.canvas.itemconfig(1, width=cw)
-        self.body.config(width=cw)
-
-
-class V2Entry(tk.Entry):
     def __init__(self, master, **kw):
-        kw.setdefault('bg', _C['entry_bg'])
-        kw.setdefault('fg', _C['entry_fg'])
-        kw.setdefault('insertbackground', _C['fg'])
-        kw.setdefault('relief', tk.FLAT)
-        kw.setdefault('font', (_C['font'], 12))
-        kw.setdefault('bd', 0)
-        kw.setdefault('highlightthickness', 1)
-        kw.setdefault('highlightcolor', _C['border'])
-        kw.setdefault('highlightbackground', _C['border'])
-        super().__init__(master, **kw)
-        self.bind('<FocusIn>', lambda e: self.config(highlightcolor=_C['accent'], highlightbackground=_C['accent']))
-        self.bind('<FocusOut>', lambda e: self.config(highlightcolor=_C['border'], highlightbackground=_C['border']))
+        super().__init__(master, fg_color='transparent', **kw)
+        self._selected = None
 
-
-class V2TagList(tk.Frame):
-    def __init__(self, master, **kw):
-        super().__init__(master, bg=_C['surface'], **kw)
-        self.input_var = tk.StringVar()
-        ef = tk.Frame(self, bg=_C['surface'])
-        ef.pack(fill=tk.X)
-
-        self.entry = V2Entry(ef, textvariable=self.input_var)
-        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
+        # 输入行
+        ef = ctk.CTkFrame(self, fg_color='transparent')
+        ef.pack(fill='x')
+        self.entry = ctk.CTkEntry(ef, placeholder_text='输入内容…')
+        self.entry.pack(side='left', fill='x', expand=True, padx=(0, 4))
         self.entry.bind('<Return>', lambda e: self._add())
+        ctk.CTkButton(ef, text='+', width=28, fg_color=C_SUCCESS,
+                       command=self._add).pack(side='left', padx=2)
+        ctk.CTkButton(ef, text='-', width=28, fg_color=C_ERROR,
+                       command=self._remove).pack(side='left')
 
-        add_c = _btn_canvas(ef, '+', self._add, width=24, height=22, bg=_C['success'])
-        add_c.pack(side=tk.LEFT)
-        rm_c = _btn_canvas(ef, '-', self._remove, width=24, height=22, bg=_C['error'])
-        rm_c.pack(side=tk.LEFT, padx=(3, 0))
+        # 列表显示
+        self._box = ctk.CTkTextbox(self, height=90, activate_scrollbars=True)
+        self._box.pack(fill='both', expand=True, pady=(4, 0))
+        self._box.configure(state='disabled')
+        self._box.bind('<Button-1>', self._on_click)
 
-        bf = tk.Frame(self, bg=_C['surface'])
-        bf.pack(fill=tk.BOTH, expand=True, pady=(4, 0))
-        self.listbox = tk.Listbox(bf, bg=_C['entry_bg'], fg=_C['fg'],
-                                   selectbackground=_C['accent'], selectforeground='white',
-                                   relief=tk.FLAT, bd=0, font=(_C['font'], 12), height=4,
-                                   highlightthickness=0)
-        self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        sb = tk.Scrollbar(bf, orient=tk.VERTICAL, width=8, bg=_C['surface'], troughcolor=_C['entry_bg'])
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        self.listbox.config(yscrollcommand=sb.set)
-        sb.config(command=self.listbox.yview)
+    def _on_click(self, event):
+        idx = self._box.index(f'@{event.x},{event.y}').split('.')[0]
+        try:
+            self._select(int(idx) - 1)
+        except (ValueError, IndexError):
+            pass
+
+    def _select(self, idx):
+        self._selected = idx
+        items = self.get_items()
+        self._box.configure(state='normal')
+        self._box.delete('1.0', 'end')
+        for i, item in enumerate(items):
+            prefix = '>> ' if i == idx else '   '
+            self._box.insert('end', f'{prefix}{item}\n')
+        self._box.configure(state='disabled')
 
     def _add(self):
-        v = self.input_var.get().strip()
+        v = self.entry.get().strip()
         if v:
-            self.listbox.insert(tk.END, v)
-            self.input_var.set('')
+            self._box.configure(state='normal')
+            items = self.get_items()
+            items.append(v)
+            self._box.delete('1.0', 'end')
+            for item in items:
+                self._box.insert('end', f'   {item}\n')
+            self._box.configure(state='disabled')
+            self.entry.delete(0, 'end')
+            self._selected = None
 
     def _remove(self):
-        sel = self.listbox.curselection()
-        if sel:
-            self.listbox.delete(sel[0])
+        if self._selected is not None:
+            items = self.get_items()
+            items.pop(self._selected)
+            self._box.configure(state='normal')
+            self._box.delete('1.0', 'end')
+            for item in items:
+                self._box.insert('end', f'   {item}\n')
+            self._box.configure(state='disabled')
+            self._selected = None
 
     def get_items(self):
-        return list(self.listbox.get(0, tk.END))
+        lines = self._box.get('1.0', 'end').strip().split('\n')
+        return [l.strip().lstrip('> ') for l in lines if l.strip() and not l.strip().startswith('>> ')]
 
     def set_items(self, items):
-        self.listbox.delete(0, tk.END)
-        for it in items:
-            self.listbox.insert(tk.END, it)
+        self._box.configure(state='normal')
+        self._box.delete('1.0', 'end')
+        for item in items:
+            self._box.insert('end', f'   {item}\n')
+        self._box.configure(state='disabled')
+        self._selected = None
+
 
 class DanmakuEditorApp:
     def __init__(self, root, file_to_open=None):
         self.root = root
         root.title('弹幕编辑器')
         root.geometry('920x820')
-        root.configure(bg=_C['bg'])
         root.minsize(760, 680)
-        self.input_path = tk.StringVar()
-        self.output_dir = tk.StringVar()
-        self.use_same_dir = tk.BooleanVar(value=True)
-        self.output_suffix = tk.StringVar(value='_edited')
-        self.shift_var = tk.StringVar()
-        self.shift_start = tk.StringVar()
-        self.shift_end = tk.StringVar()
-        self.del_start = tk.StringVar()
-        self.del_end = tk.StringVar()
-        self.del_color = tk.StringVar()
-        self.keep_mode = tk.BooleanVar(value=False)
-        self.keep_range_var = tk.BooleanVar(value=False)
-        self.keep_color_var = tk.BooleanVar(value=False)
-        self.del_empty_var = tk.BooleanVar(value=False)
+
+        self.input_path = ctk.StringVar()
+        self.output_dir = ctk.StringVar()
+        self.use_same_dir = ctk.BooleanVar(value=True)
+        self.output_suffix = ctk.StringVar(value='_edited')
+        self.shift_var = ctk.StringVar()
+        self.shift_start = ctk.StringVar()
+        self.shift_end = ctk.StringVar()
+        self.del_start = ctk.StringVar()
+        self.del_end = ctk.StringVar()
+        self.del_color = ctk.StringVar()
+        self.keep_mode = ctk.BooleanVar(value=False)
+        self.keep_range_var = ctk.BooleanVar(value=False)
+        self.keep_color_var = ctk.BooleanVar(value=False)
+        self.del_empty_var = ctk.BooleanVar(value=False)
+
         self._build_ui()
         self._refresh_preset_list()
         if file_to_open:
             self._open_file(file_to_open)
 
+    # ── 日志 ──
+
     def _log(self, msg):
         from datetime import datetime
         try:
-            self.log.config(state=tk.NORMAL)
+            self.log.configure(state='normal')
             ts = datetime.now().strftime('%H:%M:%S')
-            self.log.insert(tk.END, '  [{}] {}\n'.format(ts, msg))
-            self.log.see(tk.END)
-            self.log.config(state=tk.DISABLED)
+            self.log.insert('end', f'  [{ts}] {msg}\n')
+            self.log.see('end')
+            self.log.configure(state='disabled')
         except Exception:
             pass
 
     def _open_file(self, path):
         if os.path.isfile(path):
             self.input_path.set(path)
-            self.in_label.config(text=os.path.basename(path), fg=_C['fg'])
+            self.in_label.configure(text=os.path.basename(path))
             self._log('文件已加载: ' + os.path.basename(path))
 
+    # ── UI 构建 ──
+
     def _build_ui(self):
-        main = tk.Frame(self.root, bg=_C['bg'])
-        main.pack(fill=tk.BOTH, expand=True, padx=14, pady=14)
-        left = tk.Frame(main, bg=_C['bg'])
-        left.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        main = ctk.CTkFrame(self.root)
+        main.pack(fill='both', expand=True, padx=14, pady=14)
+
+        left = ctk.CTkFrame(main, fg_color='transparent')
+        left.pack(side='left', fill='y', padx=(0, 10))
         self._build_file_panel(left)
         self._build_preset_panel(left)
-        center = tk.Frame(main, bg=_C['bg'])
-        center.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        center = ctk.CTkFrame(main, fg_color='transparent')
+        center.pack(side='left', fill='both', expand=True)
         self._build_shift_panel(center)
         self._build_delete_panel(center)
+
         self._build_bottom_panel()
 
     def _build_file_panel(self, parent):
-        c = TitledCard(parent, '文件', width=270)
-        c.pack(fill=tk.X, pady=(0, 8))
-        b = c.body
-        tk.Label(b, text='选择 B站 XML 弹幕文件', bg=_C['surface'],
-                 fg=_C['fg'], font=(_C['font'], 12, 'bold'), anchor=tk.W).pack(fill=tk.X, pady=(0, 4))
-        ir = tk.Frame(b, bg=_C['surface'])
-        ir.pack(fill=tk.X)
-        _btn_canvas(ir, '...', self._browse_input, width=36, height=22).pack(side=tk.LEFT)
-        self.in_label = tk.Label(ir, text='未选择', bg=_C['entry_bg'], fg=_C['text_muted'],
-                                  anchor=tk.W, padx=8, pady=3)
-        self.in_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 0))
-        _btn_canvas(ir, 'i', self._show_stats, width=24, height=22, bg=_C['primary']).pack(side=tk.LEFT, padx=(5, 0))
-        tk.Frame(b, height=1, bg=_C['border']).pack(fill=tk.X, pady=6)
-        tk.Label(b, text='输出设置', bg=_C['surface'], fg=_C['fg'],
-                 font=(_C['font'], 12, 'bold'), anchor=tk.W).pack(fill=tk.X)
-        sd_frame = tk.Frame(b, bg=_C['surface'])
-        sd_frame.pack(fill=tk.X, pady=(3, 4))
-        sd_cb = tk.Canvas(sd_frame, bg=_C['surface'], highlightthickness=0, width=22, height=22)
-        sd_cb.pack(side=tk.LEFT, padx=(2, 6))
-        def _r1():
-            sd_cb.delete('all')
-            chk = self.use_same_dir.get()
-            bc = _C['accent'] if chk else _C['entry_bg']
-            bo = _C['accent'] if chk else _C['border']
-            _rounded_rect(sd_cb, 2, 2, 20, 20, r=4, fill=bc, outline=bo)
-            if chk:
-                sd_cb.create_line(6, 11, 10, 15, 16, 7, fill='white', width=2)
-        _r1()
-        def _t1(e):
-            self.use_same_dir.set(not self.use_same_dir.get())
-            self._toggle_output_dir()
-            _r1()
-        sd_cb.bind('<Button-1>', _t1)
-        tk.Label(sd_frame, text='与原文件同目录', bg=_C['surface'],
-                 fg=_C['fg'], font=(_C['font'], 12)).pack(side=tk.LEFT)
-        or_ = tk.Frame(b, bg=_C['surface'])
-        or_.pack(fill=tk.X)
-        _btn_canvas(or_, '目录', self._browse_output, width=40, height=22).pack(side=tk.LEFT)
-        self.out_label = tk.Label(or_, text='同目录', bg=_C['entry_bg'],
-                                   fg=_C['text_muted'], anchor=tk.W, padx=8, pady=3)
-        self.out_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 0))
-        sr_ = tk.Frame(b, bg=_C['surface'])
-        sr_.pack(fill=tk.X, pady=(6, 0))
-        tk.Label(sr_, text='后缀', bg=_C['surface'], fg=_C['fg'],
-                 font=(_C['font'], 12)).pack(side=tk.LEFT)
-        V2Entry(sr_, textvariable=self.output_suffix, width=14).pack(side=tk.LEFT, padx=(5, 0))
+        card = ctk.CTkFrame(parent, corner_radius=10, border_width=1, border_color='#2a2a45')
+        card.pack(fill='x', pady=(0, 8))
+
+        # 标题
+        ctk.CTkLabel(card, text='文件', font=ft(14, 'bold'),
+                      text_color=C_ACCENT).pack(anchor='w', padx=12, pady=(10, 2))
+
+        ctk.CTkLabel(card, text='选择 B站 XML 弹幕文件',
+                      font=ft(12, 'bold')).pack(anchor='w', padx=12, pady=(4, 2))
+
+        ir = ctk.CTkFrame(card, fg_color='transparent')
+        ir.pack(fill='x', padx=12, pady=(0, 6))
+        ctk.CTkButton(ir, text='...', width=36, command=self._browse_input
+                       ).pack(side='left')
+        self.in_label = ctk.CTkLabel(ir, text='未选择', text_color='#7a7a9a',
+                                      anchor='w')
+        self.in_label.pack(side='left', fill='x', expand=True, padx=5)
+        ctk.CTkButton(ir, text='i', width=28, fg_color=C_PRIMARY,
+                       command=self._show_stats).pack(side='left', padx=(5, 0))
+
+        # 分隔线
+        ctk.CTkFrame(card, height=1, fg_color='#2a2a45').pack(fill='x', padx=12, pady=4)
+
+        ctk.CTkLabel(card, text='输出设置', font=ft(12, 'bold')
+                      ).pack(anchor='w', padx=12)
+
+        sd = ctk.CTkFrame(card, fg_color='transparent')
+        sd.pack(fill='x', padx=12, pady=3)
+        ctk.CTkSwitch(sd, text='与原文件同目录', variable=self.use_same_dir,
+                       command=self._toggle_output_dir, switch_width=36,
+                       onvalue=True, offvalue=False).pack(anchor='w')
+
+        or_ = ctk.CTkFrame(card, fg_color='transparent')
+        or_.pack(fill='x', padx=12, pady=(0, 4))
+        ctk.CTkButton(or_, text='目录', width=44,
+                       command=self._browse_output).pack(side='left')
+        self.out_label = ctk.CTkLabel(or_, text='同目录', text_color='#7a7a9a',
+                                       anchor='w')
+        self.out_label.pack(side='left', fill='x', expand=True, padx=5)
+
+        sr = ctk.CTkFrame(card, fg_color='transparent')
+        sr.pack(fill='x', padx=12, pady=(0, 10))
+        ctk.CTkLabel(sr, text='后缀').pack(side='left')
+        ctk.CTkEntry(sr, textvariable=self.output_suffix, width=100
+                      ).pack(side='left', padx=5)
 
     def _build_preset_panel(self, parent):
-        c = TitledCard(parent, '预设', width=270)
-        c.pack(fill=tk.X)
-        b = c.body
-        nr = tk.Frame(b, bg=_C['surface'])
-        nr.pack(fill=tk.X)
-        self.preset_name = V2Entry(nr, width=16)
-        self.preset_name.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        _btn_canvas(nr, 'S', self._save_preset, width=24, height=22, bg=_C['success']).pack(side=tk.LEFT, padx=(3, 2))
-        _btn_canvas(nr, 'L', self._load_preset, width=24, height=22, bg=_C['primary']).pack(side=tk.LEFT, padx=2)
-        _btn_canvas(nr, 'X', self._del_preset, width=24, height=22, bg=_C['error']).pack(side=tk.LEFT, padx=(2, 0))
-        self.preset_listbox = tk.Listbox(b, bg=_C['entry_bg'], fg=_C['fg'],
-                                          selectbackground=_C['accent'], selectforeground='white',
-                                          relief=tk.FLAT, bd=0, font=(_C['font'], 12), height=6,
-                                          highlightthickness=0)
-        self.preset_listbox.pack(fill=tk.BOTH, expand=True, pady=(4, 0))
-        self.preset_listbox.bind('<<ListboxSelect>>', self._on_preset_click)
+        card = ctk.CTkFrame(parent, corner_radius=10, border_width=1, border_color='#2a2a45')
+        card.pack(fill='x')
+
+        ctk.CTkLabel(card, text='预设', font=ft(14, 'bold'),
+                      text_color=C_ACCENT).pack(anchor='w', padx=12, pady=(10, 2))
+
+        nr = ctk.CTkFrame(card, fg_color='transparent')
+        nr.pack(fill='x', padx=12)
+        self.preset_name = ctk.CTkEntry(nr, placeholder_text='预设名称')
+        self.preset_name.pack(side='left', fill='x', expand=True, padx=(0, 4))
+        ctk.CTkButton(nr, text='S', width=28, fg_color=C_SUCCESS,
+                       command=self._save_preset).pack(side='left', padx=1)
+        ctk.CTkButton(nr, text='L', width=28, fg_color=C_PRIMARY,
+                       command=self._load_preset).pack(side='left', padx=1)
+        ctk.CTkButton(nr, text='X', width=28, fg_color=C_ERROR,
+                       command=self._del_preset).pack(side='left')
+
+        self.preset_listbox = ctk.CTkTextbox(card, height=120, activate_scrollbars=True)
+        self.preset_listbox.pack(fill='both', expand=True, padx=12, pady=(4, 10))
+        self.preset_listbox.configure(state='disabled')
 
     def _build_shift_panel(self, parent):
-        c = TitledCard(parent, '时间偏移', width=420)
-        c.pack(fill=tk.X, pady=(0, 8))
-        c.card_w = 420
-        b = c.body
-        tk.Label(b, text='正数 = 延后，负数 = 提前', bg=_C['surface'],
-                 fg=_C['text_muted'], font=(_C['font'], 11)).pack(anchor=tk.W, padx=2, pady=(0, 6))
-        gd = tk.Frame(b, bg=_C['surface'])
-        gd.pack(fill=tk.X)
-        tk.Label(gd, text='偏移量 (秒)', bg=_C['surface'], fg=_C['fg'],
-                 font=(_C['font'], 12)).grid(row=0, column=0, sticky=tk.W, pady=4)
-        V2Entry(gd, textvariable=self.shift_var, width=10).grid(row=0, column=1, sticky=tk.W, padx=6)
-        tk.Label(gd, text='限定范围', bg=_C['surface'], fg=_C['fg'],
-                 font=(_C['font'], 12)).grid(row=1, column=0, sticky=tk.W, pady=4)
-        sr = tk.Frame(gd, bg=_C['surface'])
-        sr.grid(row=1, column=1, sticky=tk.W, padx=6)
-        V2Entry(sr, textvariable=self.shift_start, width=7).pack(side=tk.LEFT)
-        tk.Label(sr, text=' ~ ', bg=_C['surface'], fg=_C['fg']).pack(side=tk.LEFT)
-        V2Entry(sr, textvariable=self.shift_end, width=7).pack(side=tk.LEFT)
-        tk.Label(sr, text='秒', bg=_C['surface'], fg=_C['text_muted'],
-                 font=(_C['font'], 11)).pack(side=tk.LEFT, padx=(4, 0))
-# ═════════════════════════════════════════════════════════════
-# 第五部分: 入口
-# ═════════════════════════════════════════════════════════════
+        card = ctk.CTkFrame(parent, corner_radius=10, border_width=1, border_color='#2a2a45')
+        card.pack(fill='x', pady=(0, 8))
 
+        ctk.CTkLabel(card, text='时间偏移', font=ft(14, 'bold'),
+                      text_color=C_ACCENT).pack(anchor='w', padx=12, pady=(10, 2))
+
+        ctk.CTkLabel(card, text='正数 = 延后，负数 = 提前',
+                      text_color='#7a7a9a', font=ft(11)).pack(anchor='w', padx=12, pady=(0, 6))
+
+        gd = ctk.CTkFrame(card, fg_color='transparent')
+        gd.pack(fill='x', padx=12, pady=(0, 10))
+
+        ctk.CTkLabel(gd, text='偏移量 (秒)').grid(row=0, column=0, sticky='w', pady=4)
+        ctk.CTkEntry(gd, textvariable=self.shift_var, width=100
+                      ).grid(row=0, column=1, sticky='w', padx=6)
+
+        ctk.CTkLabel(gd, text='限定范围').grid(row=1, column=0, sticky='w', pady=4)
+        sr = ctk.CTkFrame(gd, fg_color='transparent')
+        sr.grid(row=1, column=1, sticky='w', padx=6)
+        ctk.CTkEntry(sr, textvariable=self.shift_start, width=70).pack(side='left')
+        ctk.CTkLabel(sr, text=' ~ ').pack(side='left')
+        ctk.CTkEntry(sr, textvariable=self.shift_end, width=70).pack(side='left')
+        ctk.CTkLabel(sr, text='秒', text_color='#7a7a9a').pack(side='left', padx=4)
 
     def _build_delete_panel(self, parent):
-        c = TitledCard(parent, '删除设置', width=420)
-        c.pack(fill=tk.BOTH, expand=True)
-        c.card_w = 420
-        b = c.body
-        nb = ttk.Notebook(b)
-        nb.pack(fill=tk.BOTH, expand=True)
-        style = ttk.Style()
-        style.theme_use('clam')
-        style.configure('TNotebook', background=_C['surface'], borderwidth=0)
-        style.configure('TNotebook.Tab', background=_C['entry_bg'], foreground=_C['fg'], padding=[6, 2], font=(_C['font'], 12))
-        style.map('TNotebook.Tab', background=[('selected', _C['accent'])], foreground=[('selected', 'white')])
-        t1 = tk.Frame(nb, bg=_C['surface'])
-        nb.add(t1, text='精确匹配')
-        ModeToggle(t1, self.keep_mode, label_del='删除模式：删除列表中输入的弹幕', label_keep='保留模式：只保留列表中输入的弹幕，删除其他').pack(fill=tk.X)
-        tk.Frame(t1, height=1, bg=_C['border']).pack(fill=tk.X, padx=6, pady=2)
-        tk.Label(t1, text='输入要精确匹配的弹幕文本，一行一条', bg=_C['surface'], fg=_C['text_muted'], font=(_C['font'], 11)).pack(anchor=tk.W, padx=8, pady=(6, 0))
-        self.exact_list = V2TagList(t1)
-        self.exact_list.pack(fill=tk.BOTH, expand=True, padx=6, pady=4)
-        t2 = tk.Frame(nb, bg=_C['surface'])
-        nb.add(t2, text='正则匹配')
-        ModeToggle(t2, self.keep_mode, label_del='删除模式：删除匹配正则的弹幕', label_keep='保留模式：只保留匹配正则的弹幕，删除其他').pack(fill=tk.X)
-        tk.Frame(t2, height=1, bg=_C['border']).pack(fill=tk.X, padx=6, pady=2)
-        hf = tk.Frame(t2, bg=_C['surface'])
-        hf.pack(fill=tk.X, padx=8, pady=(6, 2))
-        tk.Label(hf, text='常用正则示例：', bg=_C['surface'], fg=_C['accent'], font=(_C['font'], 11, 'bold')).pack(anchor=tk.W)
-        for pat, desc in [('  \\d+              ', '匹配纯数字'), ('  awsl|可爱|来了   ', '多关键词'), ('  ^.{1,2}$          ', '短弹幕'), ('  [\\u4e00-\\u9fff]  ', '包含中文')]:
-            hr = tk.Frame(t2, bg=_C['surface'])
-            hr.pack(fill=tk.X, padx=8)
-            tk.Label(hr, text=pat, bg=_C['surface'], fg=_C['fg'], font=('Consolas', 11), anchor=tk.W, width=22).pack(side=tk.LEFT)
-            tk.Label(hr, text=desc, bg=_C['surface'], fg=_C['text_muted'], font=(_C['font'], 10), anchor=tk.W).pack(side=tk.LEFT, padx=(4, 0))
-        tk.Label(t2, text='在下方输入正则表达式，一行一条', bg=_C['surface'], fg=_C['text_muted'], font=(_C['font'], 11)).pack(anchor=tk.W, padx=8, pady=(6, 0))
-        self.regex_list = V2TagList(t2)
-        self.regex_list.pack(fill=tk.BOTH, expand=True, padx=6, pady=4)
-        t3 = tk.Frame(nb, bg=_C['surface'])
-        nb.add(t3, text='时间范围')
-        ModeToggle(t3, self.keep_range_var, label_del='删除该时间段的弹幕', label_keep='只保留该时间段的弹幕').pack(fill=tk.X)
-        tk.Frame(t3, height=1, bg=_C['border']).pack(fill=tk.X, padx=6, pady=2)
-        tk.Label(t3, text='设置时间范围（秒）', bg=_C['surface'], fg=_C['text_muted'], font=(_C['font'], 11)).pack(anchor=tk.W, padx=8, pady=(8, 4))
-        rr = tk.Frame(t3, bg=_C['surface'])
+        card = ctk.CTkFrame(parent, corner_radius=10, border_width=1, border_color='#2a2a45')
+        card.pack(fill='both', expand=True)
+
+        ctk.CTkLabel(card, text='删除设置', font=ft(14, 'bold'),
+                      text_color=C_ACCENT).pack(anchor='w', padx=12, pady=(10, 2))
+
+        nb = ctk.CTkTabview(card)
+        nb.pack(fill='both', expand=True, padx=8, pady=(4, 8))
+
+        # ─ Tab 1: 精确匹配 ─
+        t1 = nb.add('精确匹配')
+        ctk.CTkSwitch(t1, text='保留模式（只保留列表中的弹幕，删除其他）',
+                       variable=self.keep_mode, switch_width=36).pack(fill='x', padx=6, pady=4)
+        ctk.CTkFrame(t1, height=1, fg_color='#2a2a45').pack(fill='x', padx=6, pady=2)
+        ctk.CTkLabel(t1, text='输入要精确匹配的弹幕文本，一行一条',
+                      text_color='#7a7a9a', font=ft(11)).pack(anchor='w', padx=8, pady=(4, 0))
+        self.exact_list = TagList(t1)
+        self.exact_list.pack(fill='both', expand=True, padx=6, pady=4)
+
+        # ─ Tab 2: 正则匹配 ─
+        t2 = nb.add('正则匹配')
+        ctk.CTkSwitch(t2, text='保留模式（只保留匹配正则的弹幕，删除其他）',
+                       variable=self.keep_mode, switch_width=36).pack(fill='x', padx=6, pady=4)
+        ctk.CTkFrame(t2, height=1, fg_color='#2a2a45').pack(fill='x', padx=6, pady=2)
+
+        hf = ctk.CTkFrame(t2, fg_color='transparent')
+        hf.pack(fill='x', padx=8, pady=(6, 2))
+        ctk.CTkLabel(hf, text='常用正则示例：', text_color=C_ACCENT,
+                      font=ft(11, 'bold')).pack(anchor='w')
+        for pat, desc in [('  \\d+              ', '匹配纯数字'),
+                           ('  awsl|可爱|来了   ', '多关键词'),
+                           ('  ^.{1,2}$          ', '短弹幕'),
+                           ('  [\\u4e00-\\u9fff]  ', '包含中文')]:
+            hr = ctk.CTkFrame(t2, fg_color='transparent')
+            hr.pack(fill='x', padx=8)
+            ctk.CTkLabel(hr, text=pat, font=('Consolas', 11), anchor='w',
+                          width=180).pack(side='left')
+            ctk.CTkLabel(hr, text=desc, text_color='#7a7a9a',
+                          font=ft(10)).pack(side='left', padx=4)
+
+        ctk.CTkLabel(t2, text='在下方输入正则表达式，一行一条',
+                      text_color='#7a7a9a', font=ft(11)).pack(anchor='w', padx=8, pady=(6, 0))
+        self.regex_list = TagList(t2)
+        self.regex_list.pack(fill='both', expand=True, padx=6, pady=4)
+
+        # ─ Tab 3: 时间范围 ─
+        t3 = nb.add('时间范围')
+        ctk.CTkSwitch(t3, text='保留模式（只保留该时间段的弹幕）',
+                       variable=self.keep_range_var, switch_width=36).pack(fill='x', padx=6, pady=4)
+        ctk.CTkFrame(t3, height=1, fg_color='#2a2a45').pack(fill='x', padx=6, pady=2)
+        ctk.CTkLabel(t3, text='设置时间范围（秒）', text_color='#7a7a9a',
+                      font=ft(11)).pack(anchor='w', padx=8, pady=(8, 4))
+        rr = ctk.CTkFrame(t3, fg_color='transparent')
         rr.pack(padx=8, pady=(4, 12))
-        V2Entry(rr, textvariable=self.del_start, width=9).pack(side=tk.LEFT)
-        tk.Label(rr, text=' ~ ', bg=_C['surface'], fg=_C['fg']).pack(side=tk.LEFT)
-        V2Entry(rr, textvariable=self.del_end, width=9).pack(side=tk.LEFT)
-        tk.Label(rr, text=' 秒', bg=_C['surface'], fg=_C['text_muted']).pack(side=tk.LEFT, padx=(4, 0))
-        t4 = tk.Frame(nb, bg=_C['surface'])
-        nb.add(t4, text='颜色 / 空白')
-        tk.Label(t4, text='按颜色删除弹幕', bg=_C['surface'], fg=_C['fg'], font=(_C['font'], 12, 'bold'), anchor=tk.W).pack(fill=tk.X, padx=8, pady=(8, 2))
-        tk.Label(t4, text='颜色值，逗号分隔（#FF0000,#00FF00）', bg=_C['surface'], fg=_C['text_muted'], font=(_C['font'], 11)).pack(anchor=tk.W, padx=8)
-        cr = tk.Frame(t4, bg=_C['surface'])
-        cr.pack(padx=8, pady=6, fill=tk.X)
-        V2Entry(cr, textvariable=self.del_color, width=20).pack(fill=tk.X)
-        ModeToggle(t4, self.keep_color_var, label_del='删除这些颜色', label_keep='只保留这些颜色').pack(fill=tk.X, padx=4)
-        tk.Frame(t4, height=1, bg=_C['border']).pack(fill=tk.X, padx=8, pady=8)
-        tk.Label(t4, text='其他操作', bg=_C['surface'], fg=_C['fg'], font=(_C['font'], 12, 'bold'), anchor=tk.W).pack(fill=tk.X, padx=8)
-        ef = tk.Frame(t4, bg=_C['surface'])
-        ef.pack(fill=tk.X, padx=8, pady=(4, 8))
-        ec = tk.Canvas(ef, bg=_C['surface'], highlightthickness=0, width=22, height=22)
-        ec.pack(side=tk.LEFT)
-        def _re():
-            ec.delete('all')
-            chk = self.del_empty_var.get()
-            bc = _C['accent'] if chk else _C['entry_bg']
-            bo = _C['accent'] if chk else _C['border']
-            _rounded_rect(ec, 2, 2, 20, 20, r=4, fill=bc, outline=bo)
-            if chk:
-                ec.create_line(6, 11, 10, 15, 16, 7, fill='white', width=2)
-        _re()
-        def _te(e):
-            self.del_empty_var.set(not self.del_empty_var.get())
-            _re()
-        ec.bind('<Button-1>', _te)
-        tk.Label(ef, text='删除空白/纯空格弹幕', bg=_C['surface'], fg=_C['fg'], font=(_C['font'], 12)).pack(side=tk.LEFT, padx=(6, 0))
+        ctk.CTkEntry(rr, textvariable=self.del_start, width=80).pack(side='left')
+        ctk.CTkLabel(rr, text=' ~ ').pack(side='left')
+        ctk.CTkEntry(rr, textvariable=self.del_end, width=80).pack(side='left')
+        ctk.CTkLabel(rr, text=' 秒', text_color='#7a7a9a').pack(side='left', padx=4)
+
+        # ─ Tab 4: 颜色 / 空白 ─
+        t4 = nb.add('颜色 / 空白')
+        ctk.CTkLabel(t4, text='按颜色删除弹幕', font=ft(12, 'bold')
+                      ).pack(anchor='w', padx=8, pady=(8, 2))
+        ctk.CTkLabel(t4, text='颜色值，逗号分隔（#FF0000,#00FF00）',
+                      text_color='#7a7a9a', font=ft(11)).pack(anchor='w', padx=8)
+        cr = ctk.CTkFrame(t4, fg_color='transparent')
+        cr.pack(padx=8, pady=6, fill='x')
+        ctk.CTkEntry(cr, textvariable=self.del_color).pack(fill='x')
+
+        ctk.CTkSwitch(t4, text='保留模式（只保留这些颜色）',
+                       variable=self.keep_color_var, switch_width=36).pack(fill='x', padx=6, pady=4)
+
+        ctk.CTkFrame(t4, height=1, fg_color='#2a2a45').pack(fill='x', padx=8, pady=8)
+
+        ctk.CTkLabel(t4, text='其他操作', font=ft(12, 'bold')).pack(anchor='w', padx=8)
+        ef = ctk.CTkFrame(t4, fg_color='transparent')
+        ef.pack(fill='x', padx=8, pady=(4, 8))
+        ctk.CTkSwitch(ef, text='删除空白/纯空格弹幕', variable=self.del_empty_var,
+                       switch_width=36).pack(anchor='w')
 
     def _build_bottom_panel(self):
-        bottom = tk.Frame(self.root, bg=_C['bg'])
-        bottom.pack(fill=tk.BOTH, expand=True, padx=14, pady=(0, 14))
-        ab = tk.Frame(bottom, bg='#1a1a30')
-        ab.pack(fill=tk.X, pady=(0, 6))
-        run_btn = tk.Button(ab, text='▶ 执行', bg=_C['success'], fg='white', relief=tk.FLAT, bd=0, font=(_C['font'], 11, 'bold'), padx=28, pady=7, cursor='hand2', activebackground='#00a86b', activeforeground='white', command=self._execute)
-        run_btn.pack(side=tk.LEFT, padx=10, pady=6)
-        clear_btn = tk.Button(ab, text='清除', bg='#555', fg=_C['fg'], relief=tk.FLAT, bd=0, font=(_C['font'], 10), padx=14, cursor='hand2', activebackground='#777', activeforeground='white', command=self._clear_log)
-        clear_btn.pack(side=tk.LEFT, padx=4, pady=6)
-        lf = tk.Frame(bottom, bg=_C['entry_bg'])
-        lf.pack(fill=tk.BOTH, expand=True)
-        self.log = tk.Text(lf, bg=_C['entry_bg'], fg=_C['fg'], insertbackground=_C['fg'], relief=tk.FLAT, bd=0, padx=10, pady=6, font=('Consolas', 10), state=tk.DISABLED, wrap=tk.WORD)
-        self.log.pack(fill=tk.BOTH, expand=True)
-        sb = tk.Scrollbar(self.log, orient=tk.VERTICAL, width=8)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        self.log.config(yscrollcommand=sb.set)
-        sb.config(command=self.log.yview)
+        bottom = ctk.CTkFrame(self.root)
+        bottom.pack(fill='both', expand=True, padx=14, pady=(0, 14))
+
+        ab = ctk.CTkFrame(bottom)
+        ab.pack(fill='x', pady=(0, 6))
+
+        self.run_btn = ctk.CTkButton(ab, text='▶ 执行', fg_color=C_SUCCESS,
+                                      hover_color='#00a86b', font=ft(13, 'bold'),
+                                      text_color='white', command=self._execute)
+        self.run_btn.pack(side='left', padx=10, pady=6)
+
+        ctk.CTkButton(ab, text='清除', fg_color='#555555', hover_color='#777777',
+                       command=self._clear_log).pack(side='left', padx=4, pady=6)
+
+        self.log = ctk.CTkTextbox(bottom, font=('Consolas', 11), activate_scrollbars=True)
+        self.log.pack(fill='both', expand=True)
+        self.log.configure(state='disabled')
         self._log('就绪。')
 
+    # ── 事件处理 ──
+
     def _browse_input(self):
-        p = filedialog.askopenfilename(title='选择 B站 XML 弹幕文件', filetypes=[('XML', '*.xml'), ('*', '*.*')])
+        p = filedialog.askopenfilename(title='选择 B站 XML 弹幕文件',
+                                        filetypes=[('XML', '*.xml'), ('All', '*.*')])
         if p:
             self._open_file(p)
 
@@ -884,13 +776,15 @@ class DanmakuEditorApp:
         p = filedialog.askdirectory(title='选择输出目录')
         if p:
             self.output_dir.set(p)
-            self.out_label.config(text=p, fg=_C['fg'])
+            self.out_label.configure(text=p)
 
     def _toggle_output_dir(self):
         if self.use_same_dir.get():
-            self.out_label.config(text='同目录', fg=_C['text_muted'])
+            self.out_label.configure(text='同目录', text_color='#7a7a9a')
         else:
-            self.out_label.config(text=self.output_dir.get() or '未选择', fg=_C['fg'] if self.output_dir.get() else _C['text_muted'])
+            v = self.output_dir.get()
+            self.out_label.configure(text=v or '未选择',
+                                      text_color='white' if v else '#7a7a9a')
 
     def _show_stats(self):
         path = self.input_path.get()
@@ -900,19 +794,77 @@ class DanmakuEditorApp:
             _, danmaku = parse_xml(path)
             s = get_stats(danmaku)
             md = {1: '滚动', 4: '底部', 5: '顶部', 6: '逆向'}
-            ms = ', '.join(f'{md.get(k,k)}:{v}' for k,v in s['modes'].items())
-            messagebox.showinfo('统计', '弹幕总数: {}\n时间范围: {:.3f}s~{}s\n唯一内容: {}\n弹幕模式: {}'.format(s['count'], s['time_min'], s['time_max'], s['unique_texts'], ms))
+            ms = ', '.join(f'{md.get(k, k)}:{v}' for k, v in s['modes'].items())
+            messagebox.showinfo('统计',
+                f'弹幕总数: {s["count"]}\n'
+                f'时间范围: {s["time_min"]:.3f}s~{s["time_max"]:.3f}s\n'
+                f'唯一内容: {s["unique_texts"]}\n'
+                f'弹幕模式: {ms}')
         except Exception:
             pass
 
+    # ── 预设 ──
+
+    def _on_preset_click(self, event=None):
+        pass
+
+    def _refresh_preset_list(self):
+        self.preset_listbox.configure(state='normal')
+        self.preset_listbox.delete('1.0', 'end')
+        for n in list_presets():
+            self.preset_listbox.insert('end', n + '\n')
+        self.preset_listbox.configure(state='disabled')
+
+    def _save_preset(self):
+        name = self.preset_name.get().strip()
+        if not name:
+            messagebox.showwarning('提示', '请输入预设名称')
+            return
+        save_preset(name, self._gather_settings())
+        self._log('预设已保存: ' + name)
+        self._refresh_preset_list()
+
+    def _load_preset(self):
+        name = self.preset_name.get().strip()
+        if not name:
+            messagebox.showwarning('提示', '请选择预设名称')
+            return
+        try:
+            self._apply_settings(load_preset(name))
+            self._log('预设已加载: ' + name)
+        except FileNotFoundError:
+            messagebox.showerror('错误', f'预设 "{name}" 不存在')
+        except Exception as e:
+            messagebox.showerror('错误', str(e))
+
+    def _del_preset(self):
+        name = self.preset_name.get().strip()
+        if not name:
+            return
+        if messagebox.askyesno('确认', f'删除预设 "{name}"？'):
+            delete_preset(name)
+            self._log('预设已删除: ' + name)
+            self._refresh_preset_list()
+
+    # ── 设置读写 ──
+
     def _gather_settings(self):
         return {
-            'shift': self._fn(self.shift_var.get()), 'shift_start': self._fn(self.shift_start.get()), 'shift_end': self._fn(self.shift_end.get()),
-            'delete_exact': self.exact_list.get_items(), 'delete_regex': self.regex_list.get_items(),
-            'delete_range_start': self._fn(self.del_start.get()), 'delete_range_end': self._fn(self.del_end.get()),
-            'delete_color': self.del_color.get().strip(), 'delete_empty': self.del_empty_var.get(),
-            'keep_mode': self.keep_mode.get(), 'keep_range': self.keep_range_var.get(), 'keep_color': self.keep_color_var.get(),
-            'use_same_dir': self.use_same_dir.get(), 'output_dir': self.output_dir.get(), 'output_suffix': self.output_suffix.get(),
+            'shift': self._fn(self.shift_var.get()),
+            'shift_start': self._fn(self.shift_start.get()),
+            'shift_end': self._fn(self.shift_end.get()),
+            'delete_exact': self.exact_list.get_items(),
+            'delete_regex': self.regex_list.get_items(),
+            'delete_range_start': self._fn(self.del_start.get()),
+            'delete_range_end': self._fn(self.del_end.get()),
+            'delete_color': self.del_color.get().strip(),
+            'delete_empty': self.del_empty_var.get(),
+            'keep_mode': self.keep_mode.get(),
+            'keep_range': self.keep_range_var.get(),
+            'keep_color': self.keep_color_var.get(),
+            'use_same_dir': self.use_same_dir.get(),
+            'output_dir': self.output_dir.get(),
+            'output_suffix': self.output_suffix.get(),
         }
 
     def _apply_settings(self, d):
@@ -938,55 +890,17 @@ class DanmakuEditorApp:
 
     @staticmethod
     def _fn(v):
-        try: return float(v.strip()) if v.strip() else None
-        except ValueError: return None
-
-    def _on_preset_click(self, event):
-        sel = self.preset_listbox.curselection()
-        if sel:
-            self.preset_name.delete(0, tk.END)
-            self.preset_name.insert(0, self.preset_listbox.get(sel[0]))
-
-    def _refresh_preset_list(self):
-        self.preset_listbox.delete(0, tk.END)
-        for n in list_presets():
-            self.preset_listbox.insert(tk.END, n)
-
-    def _save_preset(self):
-        name = self.preset_name.get().strip()
-        if not name:
-            messagebox.showwarning('提示', '请输入预设名称')
-            return
-        save_preset(name, self._gather_settings())
-        self._log('预设已保存: ' + name)
-        self._refresh_preset_list()
-
-    def _load_preset(self):
-        name = self.preset_name.get().strip()
-        if not name:
-            messagebox.showwarning('提示', '请选择预设名称')
-            return
         try:
-            self._apply_settings(load_preset(name))
-            self._log('预设已加载: ' + name)
-        except FileNotFoundError:
-            messagebox.showerror('错误', '预设 "{0}" 不存在'.format(name))
-        except Exception as e:
-            messagebox.showerror('错误', str(e))
+            return float(v.strip()) if v.strip() else None
+        except (ValueError, AttributeError):
+            return None
 
-    def _del_preset(self):
-        name = self.preset_name.get().strip()
-        if not name:
-            return
-        if messagebox.askyesno('确认', '删除预设 "{0}"？'.format(name)):
-            delete_preset(name)
-            self._log('预设已删除: ' + name)
-            self._refresh_preset_list()
+    # ── 执行 ──
 
     def _clear_log(self):
-        self.log.config(state=tk.NORMAL)
-        self.log.delete(1.0, tk.END)
-        self.log.config(state=tk.DISABLED)
+        self.log.configure(state='normal')
+        self.log.delete('1.0', 'end')
+        self.log.configure(state='disabled')
 
     def _execute(self):
         inp = self.input_path.get()
@@ -998,79 +912,100 @@ class DanmakuEditorApp:
         except Exception as e:
             messagebox.showerror('错误', '解析失败: ' + str(e))
             return
-        self._log('已读取: {0} ({1} 条弹幕)'.format(os.path.basename(inp), len(danmaku)))
+
+        self._log(f'已读取: {os.path.basename(inp)} ({len(danmaku)} 条弹幕)')
         total_deleted = 0
         keep = self.keep_mode.get()
+
         exact_items = self.exact_list.get_items()
         regex_items = self.regex_list.get_items()
+
+        # 保留模式
         if keep and exact_items:
             n = delete_exact(danmaku, set(exact_items), invert=True)
             total_deleted += n
-            self._log('保留[精确]: 删除其他 ' + str(n) + ' 条')
+            self._log(f'保留[精确]: 删除其他 {n} 条')
+
         if keep and regex_items:
             for p, n in delete_regex(danmaku, regex_items, invert=True):
                 total_deleted += n
-                self._log('保留[正则] /' + p + '/: 删除其他 ' + str(n) + ' 条')
+                self._log(f'保留[正则] /{p}/: 删除其他 {n} 条')
+
         ds, de = self._fn(self.del_start.get()), self._fn(self.del_end.get())
         if self.keep_range_var.get() and ds is not None and de is not None:
             n = delete_range(danmaku, (ds, de), invert=True)
             total_deleted += n
-            self._log('保留[范围] ' + str(ds) + 's~' + str(de) + 's: 删除范围外 ' + str(n) + ' 条')
+            self._log(f'保留[范围] {ds}s~{de}s: 删除范围外 {n} 条')
+
         color_str = self.del_color.get().strip()
         if self.keep_color_var.get() and color_str:
             cl = [c.strip() for c in color_str.split(',') if c.strip()]
             n = delete_by_color(danmaku, cl, invert=True)
             total_deleted += n
-            self._log('保留[颜色]: 删除其他 ' + str(n) + ' 条')
+            self._log(f'保留[颜色]: 删除其他 {n} 条')
+
+        # 删除模式
         if not keep:
             if self.del_empty_var.get():
                 n = delete_empty(danmaku)
                 total_deleted += n
-                self._log('删除: 空白 ' + str(n) + ' 条')
+                self._log(f'删除: 空白 {n} 条')
             if color_str and not self.keep_color_var.get():
                 cl = [c.strip() for c in color_str.split(',') if c.strip()]
                 n = delete_by_color(danmaku, cl)
                 total_deleted += n
-                self._log('删除: 颜色 ' + str(n) + ' 条')
+                self._log(f'删除: 颜色 {n} 条')
             if ds is not None and de is not None and not self.keep_range_var.get():
                 n = delete_range(danmaku, (ds, de))
                 total_deleted += n
-                self._log('删除: 时间 ' + str(ds) + 's~' + str(de) + 's ' + str(n) + ' 条')
+                self._log(f'删除: 时间 {ds}s~{de}s {n} 条')
             if exact_items:
                 n = delete_exact(danmaku, set(exact_items))
                 total_deleted += n
-                self._log('删除: 精确 ' + str(n) + ' 条')
+                self._log(f'删除: 精确 {n} 条')
             if regex_items:
                 for p, n in delete_regex(danmaku, regex_items):
                     total_deleted += n
-                    self._log('删除: 正则 /' + p + '/ ' + str(n) + ' 条')
+                    self._log(f'删除: 正则 /{p}/ {n} 条')
+
+        # 时间偏移
         sv = self._fn(self.shift_var.get())
         if sv is not None:
             ss, se = self._fn(self.shift_start.get()), self._fn(self.shift_end.get())
             tr = (ss, se) if (ss is not None and se is not None) else None
             n = shift_time(danmaku, sv, time_range=tr)
-            ri = ' [' + str(ss) + 's~' + str(se) + 's]' if tr else ''
-            self._log('偏移: {0:+.3f} 秒{1} ({2} 条)'.format(sv, ri, n))
-        out_dir = os.path.dirname(inp) if self.use_same_dir.get() else (self.output_dir.get().strip() or os.path.dirname(inp))
+            ri = f' [{ss}s~{se}s]' if tr else ''
+            self._log(f'偏移: {sv:+.3f} 秒{ri} ({n} 条)')
+
+        # 输出
+        out_dir = os.path.dirname(inp) if self.use_same_dir.get() else (
+            self.output_dir.get().strip() or os.path.dirname(inp))
         base, ext = os.path.splitext(os.path.basename(inp))
         suf = self.output_suffix.get().strip()
         out_path = os.path.join(out_dir, base + suf + ext)
         write_xml(out_path, header, danmaku)
-        self._log('完成: 输出到 ' + out_path)
-        self._log('完成: 剩余 ' + str(len(danmaku)) + ' 条')
+        self._log(f'完成: 输出到 {out_path}')
+        self._log(f'完成: 剩余 {len(danmaku)} 条')
         if total_deleted:
-            self._log('完成: 删除 ' + str(total_deleted) + ' 条')
+            self._log(f'完成: 删除 {total_deleted} 条')
+
+
 def gui_main(file_to_open=None):
-    """启动 GUI（DPI 感知在 _enable_dpi_aware 中全局处理）"""
-    root = tk.Tk()
+    root = ctk.CTk()
     DanmakuEditorApp(root, file_to_open)
     root.mainloop()
 
 
+# ═════════════════════════════════════════════════════════════
+# 入口
+# ═════════════════════════════════════════════════════════════
+
 if __name__ == '__main__':
     if len(sys.argv) >= 2 and not sys.argv[1].startswith('-'):
+        # 有非 flag 参数 → GUI 并打开文件
         gui_main(sys.argv[1])
-    elif len(sys.argv) >= 2 and sys.argv[1].startswith('-'):
+    elif len(sys.argv) >= 2:
+        # 有 flag 参数 → CLI
         cli_main()
     else:
         gui_main()
