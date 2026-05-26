@@ -1,6 +1,6 @@
 # DanmakuEditor v2.0 — B站 XML 弹幕编辑器
 
-> 由 AI（Claude）辅助开发重构。
+> 使用 mimo-v2-pro 模型辅助开发重构。感谢 mimo 百万亿 token 赠送计划提供的 token 支持。
 
 一个离线、轻量的 B站 XML 弹幕编辑工具。支持时间偏移、精确/正则/颜色/时间范围删除、保留模式（反向删除），GUI 和 CLI 双模式。
 
