@@ -29,10 +29,15 @@ python danmaku_editor.py input.xml --list          # CLI 统计
 
 CustomTkinter 是**可选**依赖：不装也能用 CLI，GUI 模式会给出中文提示。
 
-### 使用打包版
+### 使用打包版（免装 Python）
 
-[Releases](https://github.com/Lokitla/danmaku-editor/releases) 里的 `DanmakuEditor.exe` 是 **v2.0** 的打包版，双击即可运行。
-v3.0 是单文件源码版本，直接用上面的方式跑；各版本的改动说明也写在对应 Release 里。
+从 [Releases](https://github.com/Lokitla/danmaku-editor/releases) 下载最新的 `DanmakuEditor.exe`（v3.0 起每个版本都附打包版）：
+
+* **双击**即可打开图形界面，不需要装 Python 或任何依赖；
+* 命令行同样可用，把 `python danmaku_editor.py` 换成 `DanmakuEditor.exe` 即可，例如 `DanmakuEditor.exe input.xml --list`；
+* 自己打包：`pwsh -File build_exe.ps1`（需要 `pip install pyinstaller`），产物在 `dist\DanmakuEditor.exe`。
+
+各版本的改动说明写在对应 Release 里。
 
 ## CLI 用法
 
@@ -102,6 +107,7 @@ CustomTkinter 暗色主题，左侧文件与预设管理，中间操作设置，
 
 ```
 danmaku_editor.py    # 主程序（CLI + GUI）
+build_exe.ps1        # 打包脚本（PyInstaller 单文件 exe）
 presets/             # 预设文件（自动创建）
 regression/          # 重构期的行为对照脚本，不参与运行，删掉不影响主程序
 ```
