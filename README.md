@@ -31,7 +31,8 @@ CustomTkinter 是**可选**依赖：不装也能用 CLI，GUI 模式会给出中
 
 ### 使用打包版
 
-从 [Releases](https://github.com/Lokitla/danmaku-editor/releases) 下载 `DanmakuEditor.exe`，双击运行。
+[Releases](https://github.com/Lokitla/danmaku-editor/releases) 里的 `DanmakuEditor.exe` 是 **v2.0** 的打包版，双击即可运行。
+v3.0 是单文件源码版本，直接用上面的方式跑；各版本的改动说明也写在对应 Release 里。
 
 ## CLI 用法
 
@@ -123,47 +124,15 @@ NL_PRESERVED_BY_V4_ONLY=2 ['H_noop', 'O_delete_missing']
 
 `v0_original.py` 就是本仓库 `master` 在重构前那一版（commit `3a9dbc5` 的 `danmaku_editor.py`），逐字节同源。
 
+## 版本历史
+
+各版本改了什么，看 [Releases](https://github.com/Lokitla/danmaku-editor/releases)。
+
 ## 技术栈
 
 - Python 3.8+
 - CustomTkinter 5.2+（可选：不装也能用 CLI）
 - 标准库
-
-## 更新日志
-
-### v3.0 — 内部清理重构（功能与 CLI 输出保持不变）
-
-本次只做单文件内部清理，不拆包、不加依赖，`python danmaku_editor.py` 照旧直接跑。
-
-**修掉的缺陷**
-
-| # | 缺陷 | 影响 |
-|---|------|------|
-| 1 | `p` 属性裸 `int()` | 字段异常时整份文件解析失败，报 `invalid literal for int()` |
-| 2 | 入口判断用 `sys.argv[1].startswith('-')` | `xxx.xml --list` 被误判为「带文件启动 GUI」，弹出窗口 |
-| 3 | `_fix_stdout()` 直接替换 `sys.stdout` | 旧 wrapper 析构关闭同一 buffer，重定向到文件时输出被静默丢弃 |
-| 4 | import 期就建/销 Tk root 探测字体 | 纯 CLI 运行也会短暂创建窗口，stderr 留下 Tcl 噪音 |
-| 5 | 非法正则/颜色直接抛原生异常 | 用户看到 `unterminated character set at position 0`，无中文提示 |
-| 6 | CLI 与 GUI 各写一份删除/保留/偏移流程 | 两边顺序与判定不一致 |
-| 7 | TagList 每次操作都从文本框重新 parse | 选中序号与渲染错位，四份增删渲染代码重复 |
-| 8 | 死代码 `_on_preset_click`、只为判空的 `ops` 列表 | 冗余 |
-
-**行为改进**
-
-* **文件无损往返**：二进制读写 + 保留原文件换行风格（LF/CRLF/BOM 都原样还原）。旧版一次「无操作」保存就会把 LF 翻成 CRLF，并重排 `<i>` 内的元信息行；新版不再改动输入字节。
-* **入口路由**：无参数 / 单个文件 → GUI；出现任何选项（`-h`、`--list`…）→ CLI；多个裸参数交给 CLI 报错，不再静默弹窗。
-* **GUI 不留黑框**：Windows 下双击启动 GUI 时会隐藏控制台窗口；若同台还有其他进程（比如从 cmd / PowerShell 里跑命令行），则不隐藏。
-* **不再刷 Tcl 报错**：customtkinter 的延迟回调在窗口销毁后触发会打 `invalid command name "..._windows_set_titlebar_icon"`，现通过替换 Tcl 后台错误钩子压掉，不影响 Python 侧异常上报。
-* **customtkinter 可选**：没装 `customtkinter` 时 CLI 照常工作，GUI 模式给出中文提示而不是 traceback。
-
-**对外契约**：CLI 输出文案是契约，改动前后请用 `regression/` 里的 17 场景对照脚本验证。
-
-### v2.0
-
-- **UI 全面重写**：迁移至 CustomTkinter，内置暗色主题，圆角组件
-- **字体优化**：自动检测系统最佳中文字体（Microsoft YaHei UI）
-- **Bug 修复**：修复 CLI 入口逻辑、移除脆弱的 canvas item 操作
-- **代码精简**：删除约 450 行冗余代码（手动 DPI、canvas 圆角、自定义输入框）
 
 ## License
 
