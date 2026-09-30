@@ -1,0 +1,4 @@
+# 仓库内统一用 LF 保存；Windows 工作区由 core.autocrlf 检出为 CRLF。
+# regression/ 单独强制 LF：对照用的样例文件与"逐字节同源"的基线不能被换行转换。
+* text=auto eol=lf
+regression/** -text

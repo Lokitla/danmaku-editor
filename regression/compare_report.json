@@ -1,0 +1,274 @@
+{
+ "A_list": {
+  "v0": {
+   "code": 0,
+   "out": "文件: <IN>\n弹幕总数: 9\n时间范围: 1.000s ~ 12.000s\n唯一内容: 9\n弹幕模式分布: {1: 6, 4: 2, 5: 1}\n",
+   "err": "",
+   "xml": "",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "文件: <IN>\n弹幕总数: 9\n时间范围: 1.000s ~ 12.000s\n唯一内容: 9\n弹幕模式分布: {1: 6, 4: 2, 5: 1}\n",
+   "err": "",
+   "xml": "",
+   "nl_kept": false
+  }
+ },
+ "B_shift_del": {
+  "v0": {
+   "code": 0,
+   "out": "[删除] 空白弹幕: 1 条\n[删除] 精确匹配 (2 个): 2 条\n[偏移] +2.500 秒, 影响 6 条\n[完成] 输出: <OUT>\n[完成] 剩余: 6 条\n[完成] 总计删除: 3 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"3.500,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\r\n  <d p=\"5.000,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\r\n  <d p=\"6.250,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\r\n  <d p=\"7.500,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\r\n  <d p=\"12.499,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\r\n  <d p=\"14.500,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[删除] 空白弹幕: 1 条\n[删除] 精确匹配 (2 个): 2 条\n[偏移] +2.500 秒, 影响 6 条\n[完成] 输出: <OUT>\n[完成] 剩余: 6 条\n[完成] 总计删除: 3 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"3.500,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\n  <d p=\"5.000,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\n  <d p=\"6.250,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\n  <d p=\"7.500,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\n  <d p=\"12.499,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\n  <d p=\"14.500,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\n</i>\n",
+   "nl_kept": false
+  }
+ },
+ "C_regex_color_range": {
+  "v0": {
+   "code": 0,
+   "out": "[删除] 颜色: 1 条\n[删除] 时间 10.0s~20.0s: 1 条\n[删除] 正则 \"/\\d+/\": 1 条\n[完成] 输出: <OUT>\n[完成] 剩余: 6 条\n[完成] 总计删除: 3 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"1.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\r\n  <d p=\"3.750,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\r\n  <d p=\"5.000,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\r\n  <d p=\"6.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\r\n  <d p=\"7.500,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\r\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[删除] 颜色: 1 条\n[删除] 时间 10.0s~20.0s: 1 条\n[删除] 正则 \"/\\d+/\": 1 条\n[完成] 输出: <OUT>\n[完成] 剩余: 6 条\n[完成] 总计删除: 3 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"1.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\n  <d p=\"3.750,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\n  <d p=\"5.000,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\n  <d p=\"6.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\n  <d p=\"7.500,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\n</i>\n",
+   "nl_kept": false
+  }
+ },
+ "D_keep_regex": {
+  "v0": {
+   "code": 0,
+   "out": "[保留] 正则 \"/awsl|对的对的/\": 删除其他 7 条\n[偏移] -1.500 秒, 影响 2 条\n[完成] 输出: <OUT>\n[完成] 剩余: 2 条\n[完成] 总计删除: 7 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"6.000,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\r\n  <d p=\"8.499,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[保留] 正则 \"/awsl|对的对的/\": 删除其他 7 条\n[偏移] -1.500 秒, 影响 2 条\n[完成] 输出: <OUT>\n[完成] 剩余: 2 条\n[完成] 总计删除: 7 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"6.000,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\n  <d p=\"8.499,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\n</i>\n",
+   "nl_kept": false
+  }
+ },
+ "E_keep_exact": {
+  "v0": {
+   "code": 0,
+   "out": "[保留] 精确匹配 (2 个): 删除其他 7 条\n[完成] 输出: <OUT>\n[完成] 剩余: 2 条\n[完成] 总计删除: 7 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"8.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\r\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[保留] 精确匹配 (2 个): 删除其他 7 条\n[完成] 输出: <OUT>\n[完成] 剩余: 2 条\n[完成] 总计删除: 7 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"8.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\n</i>\n",
+   "nl_kept": false
+  }
+ },
+ "F_bad_regex": {
+  "v0": {
+   "code": 1,
+   "out": "",
+   "err": "[错误] unterminated character set at position 0\n",
+   "xml": "",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 1,
+   "out": "",
+   "err": "[错误] unterminated character set at position 0\n",
+   "xml": "",
+   "nl_kept": false
+  }
+ },
+ "G_shift_range": {
+  "v0": {
+   "code": 0,
+   "out": "[偏移] +1.250 秒 [3.0s~6.0s], 影响 2 条\n[完成] 输出: <OUT>\n[完成] 剩余: 9 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"1.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\r\n  <d p=\"2.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\r\n  <d p=\"5.000,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\r\n  <d p=\"6.250,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\r\n  <d p=\"6.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\r\n  <d p=\"7.500,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\r\n  <d p=\"8.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\r\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\r\n  <d p=\"12.000,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[偏移] +1.250 秒 [3.0s~6.0s], 影响 2 条\n[完成] 输出: <OUT>\n[完成] 剩余: 9 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"1.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\n  <d p=\"2.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\n  <d p=\"5.000,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\n  <d p=\"6.250,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\n  <d p=\"6.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\n  <d p=\"7.500,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\n  <d p=\"8.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\n  <d p=\"12.000,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\n</i>\n",
+   "nl_kept": false
+  }
+ },
+ "H_noop": {
+  "v0": {
+   "code": 0,
+   "out": "[完成] 输出: <OUT>\n[完成] 剩余: 9 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"1.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\r\n  <d p=\"2.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\r\n  <d p=\"3.750,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\r\n  <d p=\"5.000,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\r\n  <d p=\"6.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\r\n  <d p=\"7.500,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\r\n  <d p=\"8.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\r\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\r\n  <d p=\"12.000,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[完成] 输出: <OUT>\n[完成] 剩余: 9 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"1.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\n  <d p=\"2.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\n  <d p=\"3.750,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\n  <d p=\"5.000,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\n  <d p=\"6.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\n  <d p=\"7.500,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\n  <d p=\"8.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\n  <d p=\"12.000,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\n</i>\n",
+   "nl_kept": true
+  }
+ },
+ "I_keep_range": {
+  "v0": {
+   "code": 0,
+   "out": "[保留] 时间 4.0s~9.0s: 删除范围外 5 条\n[完成] 输出: <OUT>\n[完成] 剩余: 4 条\n[完成] 总计删除: 5 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"5.000,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\r\n  <d p=\"6.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\r\n  <d p=\"7.500,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\r\n  <d p=\"8.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[保留] 时间 4.0s~9.0s: 删除范围外 5 条\n[完成] 输出: <OUT>\n[完成] 剩余: 4 条\n[完成] 总计删除: 5 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"5.000,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\n  <d p=\"6.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\n  <d p=\"7.500,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\n  <d p=\"8.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\n</i>\n",
+   "nl_kept": false
+  }
+ },
+ "J_keep_color": {
+  "v0": {
+   "code": 0,
+   "out": "[保留] 颜色: 删除其他 8 条\n[完成] 输出: <OUT>\n[完成] 剩余: 1 条\n[完成] 总计删除: 8 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"2.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[保留] 颜色: 删除其他 8 条\n[完成] 输出: <OUT>\n[完成] 剩余: 1 条\n[完成] 总计删除: 8 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"2.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\n</i>\n",
+   "nl_kept": false
+  }
+ },
+ "K_multi_regex": {
+  "v0": {
+   "code": 0,
+   "out": "[删除] 正则 \"/\\d+/\": 1 条\n[删除] 正则 \"/awsl/\": 1 条\n[完成] 输出: <OUT>\n[完成] 剩余: 7 条\n[完成] 总计删除: 2 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"1.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\r\n  <d p=\"2.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\r\n  <d p=\"3.750,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\r\n  <d p=\"5.000,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\r\n  <d p=\"6.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\r\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\r\n  <d p=\"12.000,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[删除] 正则 \"/\\d+/\": 1 条\n[删除] 正则 \"/awsl/\": 1 条\n[完成] 输出: <OUT>\n[完成] 剩余: 7 条\n[完成] 总计删除: 2 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"1.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\n  <d p=\"2.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\n  <d p=\"3.750,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\n  <d p=\"5.000,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\n  <d p=\"6.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\n  <d p=\"12.000,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\n</i>\n",
+   "nl_kept": false
+  }
+ },
+ "L_keep_exact_shift": {
+  "v0": {
+   "code": 0,
+   "out": "[保留] 精确匹配 (1 个): 删除其他 8 条\n[偏移] +1.000 秒, 影响 1 条\n[完成] 输出: <OUT>\n[完成] 剩余: 1 条\n[完成] 总计删除: 8 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"9.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[保留] 精确匹配 (1 个): 删除其他 8 条\n[偏移] +1.000 秒, 影响 1 条\n[完成] 输出: <OUT>\n[完成] 剩余: 1 条\n[完成] 总计删除: 8 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"9.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\n</i>\n",
+   "nl_kept": false
+  }
+ },
+ "M_bad_color": {
+  "v0": {
+   "code": 1,
+   "out": "",
+   "err": "[错误] invalid literal for int() with base 10: 'notacolor'\n",
+   "xml": "",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 1,
+   "out": "",
+   "err": "[错误] invalid literal for int() with base 10: 'notacolor'\n",
+   "xml": "",
+   "nl_kept": false
+  }
+ },
+ "N_shift_only": {
+  "v0": {
+   "code": 0,
+   "out": "[偏移] +0.500 秒, 影响 9 条\n[完成] 输出: <OUT>\n[完成] 剩余: 9 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"1.500,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\r\n  <d p=\"3.000,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\r\n  <d p=\"4.250,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\r\n  <d p=\"5.500,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\r\n  <d p=\"6.750,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\r\n  <d p=\"8.000,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\r\n  <d p=\"8.625,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\r\n  <d p=\"10.499,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\r\n  <d p=\"12.500,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[偏移] +0.500 秒, 影响 9 条\n[完成] 输出: <OUT>\n[完成] 剩余: 9 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"1.500,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\n  <d p=\"3.000,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\n  <d p=\"4.250,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\n  <d p=\"5.500,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\n  <d p=\"6.750,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\n  <d p=\"8.000,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\n  <d p=\"8.625,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\n  <d p=\"10.499,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\n  <d p=\"12.500,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\n</i>\n",
+   "nl_kept": false
+  }
+ },
+ "O_delete_missing": {
+  "v0": {
+   "code": 0,
+   "out": "[删除] 精确匹配 (1 个): 0 条\n[完成] 输出: <OUT>\n[完成] 剩余: 9 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"1.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\r\n  <d p=\"2.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\r\n  <d p=\"3.750,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\r\n  <d p=\"5.000,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\r\n  <d p=\"6.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\r\n  <d p=\"7.500,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\r\n  <d p=\"8.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\r\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\r\n  <d p=\"12.000,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[删除] 精确匹配 (1 个): 0 条\n[完成] 输出: <OUT>\n[完成] 剩余: 9 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"1.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\n  <d p=\"2.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\n  <d p=\"3.750,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\n  <d p=\"5.000,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\n  <d p=\"6.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\n  <d p=\"7.500,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\n  <d p=\"8.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\n  <d p=\"12.000,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\n</i>\n",
+   "nl_kept": true
+  }
+ },
+ "P_huge_shift": {
+  "v0": {
+   "code": 0,
+   "out": "[偏移] +100000.000 秒, 影响 9 条\n[完成] 输出: <OUT>\n[完成] 剩余: 9 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"100001.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\r\n  <d p=\"100002.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\r\n  <d p=\"100003.750,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\r\n  <d p=\"100005.000,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\r\n  <d p=\"100006.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\r\n  <d p=\"100007.500,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\r\n  <d p=\"100008.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\r\n  <d p=\"100009.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\r\n  <d p=\"100012.000,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[偏移] +100000.000 秒, 影响 9 条\n[完成] 输出: <OUT>\n[完成] 剩余: 9 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"100001.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\n  <d p=\"100002.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\n  <d p=\"100003.750,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\n  <d p=\"100005.000,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\n  <d p=\"100006.250,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\n  <d p=\"100007.500,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\n  <d p=\"100008.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\n  <d p=\"100009.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\n  <d p=\"100012.000,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\n</i>\n",
+   "nl_kept": false
+  }
+ },
+ "Q_neg_shift_range": {
+  "v0": {
+   "code": 0,
+   "out": "[偏移] -3.500 秒 [4.0s~8.0s], 影响 3 条\n[完成] 输出: <OUT>\n[完成] 剩余: 9 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!-- Bilibili danmaku fixture for refactor regression checks -->\r\n<i>  <chatserver>chat.bilibili.com</chatserver>  <chatid>12345678</chatid>  <mission>0</mission>  <maxlimit>1500</maxlimit>  <state>0</state>  <real_name>0</real_name>  <source>k-v</source>\r\n  <d p=\"1.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\r\n  <d p=\"2.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\r\n  <d p=\"3.750,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\r\n  <d p=\"1.500,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\r\n  <d p=\"2.750,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\r\n  <d p=\"4.000,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\r\n  <d p=\"8.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\r\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\r\n  <d p=\"12.000,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\r\n</i>",
+   "nl_kept": false
+  },
+  "v4": {
+   "code": 0,
+   "out": "[偏移] -3.500 秒 [4.0s~8.0s], 影响 3 条\n[完成] 输出: <OUT>\n[完成] 剩余: 9 条\n",
+   "err": "",
+   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Bilibili danmaku fixture for refactor regression checks -->\n<i>\n  <chatserver>chat.bilibili.com</chatserver>\n  <chatid>12345678</chatid>\n  <mission>0</mission>\n  <maxlimit>1500</maxlimit>\n  <state>0</state>\n  <real_name>0</real_name>\n  <source>k-v</source>\n  <d p=\"1.000,1,25,16777215,1700000001,0,a1b2c3d4,111111111111\">第一条弹幕</d>\n  <d p=\"2.500,1,25,16711680,1700000002,0,a1b2c3d5,222222222222\">红色的弹幕</d>\n  <d p=\"3.750,4,25,16776960,1700000003,0,a1b2c3d6,333333333333\">底部弹幕</d>\n  <d p=\"1.500,5,25,65280,1700000004,0,a1b2c3d7,444444444444\">顶部弹幕</d>\n  <d p=\"2.750,1,25,16777215,1700000005,0,a1b2c3d8,555555555555\">   </d>\n  <d p=\"4.000,1,25,16777215,1700000006,0,a1b2c3d9,666666666666\">awsl</d>\n  <d p=\"8.125,4,25,16777215,1700000007,0,a1b2c3da,777777777777\">233</d>\n  <d p=\"9.999,1,25,16777215,1700000008,0,a1b2c3db,888888888888\">对的对的</d>\n  <d p=\"12.000,1,25,16777215,1700000009,0,a1b2c3dc,999999999999\">最后一条</d>\n</i>\n",
+   "nl_kept": false
+  }
+ }
+}
