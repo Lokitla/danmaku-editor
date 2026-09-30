@@ -12,6 +12,9 @@ presets/
 test_*.xml
 test_output*.xml
 
+# 回归对照脚本的工作目录
+regression/cmp_work/
+
 # IDE
 .vscode/
 .idea/
